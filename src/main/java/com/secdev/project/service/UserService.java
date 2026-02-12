@@ -51,11 +51,11 @@ public class UserService {
                    LoginAttemptRepository loginAttemptRepository,
                    PasswordEncoder passwordEncoder,
                    BruteForceProperties bruteForceProperties) {
-    this.userRepository = userRepository;
-    this.loginAttemptRepository = loginAttemptRepository;
-    this.passwordEncoder = passwordEncoder;
-    this.bruteForceProperties = bruteForceProperties;
-}
+        this.userRepository = userRepository;
+        this.loginAttemptRepository = loginAttemptRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.bruteForceProperties = bruteForceProperties;
+    }
 
     @Transactional
     public void lockAccount(String email) {
@@ -176,11 +176,11 @@ public class UserService {
     }
 
     public boolean shouldLockByEmail(String email) {
-    LocalDateTime after = LocalDateTime.now().minusMinutes(bruteForceProperties.getWindowMinutes());
-    long emailFails = loginAttemptRepository
-            .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(normalizeEmail(email), after);
-    return emailFails >= bruteForceProperties.getMaxEmailAttempts();
-}
+        LocalDateTime after = LocalDateTime.now().minusMinutes(bruteForceProperties.getWindowMinutes());
+        long emailFails = loginAttemptRepository
+                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(normalizeEmail(email), after);
+        return emailFails >= bruteForceProperties.getMaxEmailAttempts();
+    }
 
 
     private String mimeToExtension(String mime) {
