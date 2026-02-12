@@ -1,6 +1,6 @@
 package com.secdev.project.service;
-import com.secdev.project.TestBase;
 
+import com.secdev.project.TestBase;
 import com.secdev.project.service.exceptions.TooManyAttemptsException;
 
 import org.junit.jupiter.api.Test;
@@ -11,64 +11,27 @@ import static org.mockito.Mockito.*;
 
 class UserServiceBruteForceTest extends TestBase {
 
+    private static final int WINDOW_MIN = 10;
+    private static final int MAX_EMAIL = 3;
+    private static final int MAX_IP = 20;
+
+    private void stubEmailPolicy() {
+        when(bruteForceProperties.getWindowMinutes()).thenReturn(WINDOW_MIN);
+        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(MAX_EMAIL);
+    }
+
+    private void stubIpPolicy() {
+        stubEmailPolicy();
+        when(bruteForceProperties.getMaxIpAttempts()).thenReturn(MAX_IP);
+    }
+
     @Test
     void assertNotBlocked_shouldThrow_whenMaxEmailReached() {
-
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
+        stubEmailPolicy();
 
         when(loginAttemptRepository
                 .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(3L);
-
-        assertThrows(TooManyAttemptsException.class,
-                () -> userService.assertNotBlocked("test@mail.com", "127.0.0.1"));
-    }
-
-
-    @Test
-    void shouldLockByEmail_returnsTrue_whenThresholdReached() {
-
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
-
-        when(loginAttemptRepository
-                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(3L);
-
-        boolean result = userService.shouldLockByEmail("test@mail.com");
-
-        assertTrue(result);
-    }
-
-    @Test
-    void assertNotBlocked_shouldThrow_whenMaxIpReached() {
-
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
-        when(bruteForceProperties.getMaxIpAttempts()).thenReturn(20);
-
-        when(loginAttemptRepository
-                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(0L);
-
-        when(loginAttemptRepository
-                .countByIpAddressAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(20L);
-
-        assertThrows(TooManyAttemptsException.class,
-                () -> userService.assertNotBlocked("test@mail.com", "127.0.0.1"));
-    }
-
-    @Test
-    void assertNotBlocked_shouldThrow_whenEmailEqualsThreshold() {
-
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
-
-        when(loginAttemptRepository
-                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(3L);
+                .thenReturn((long) MAX_EMAIL);
 
         assertThrows(TooManyAttemptsException.class,
                 () -> userService.assertNotBlocked("test@mail.com", "127.0.0.1"));
@@ -76,14 +39,11 @@ class UserServiceBruteForceTest extends TestBase {
 
     @Test
     void assertNotBlocked_shouldNotThrow_whenEmailJustBelowThreshold() {
-
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
-        when(bruteForceProperties.getMaxIpAttempts()).thenReturn(20);
+        stubIpPolicy(); 
 
         when(loginAttemptRepository
                 .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(2L);
+                .thenReturn((long) MAX_EMAIL - 1);
 
         when(loginAttemptRepository
                 .countByIpAddressAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
@@ -94,11 +54,46 @@ class UserServiceBruteForceTest extends TestBase {
     }
 
     @Test
-    void assertNotBlocked_shouldNormalizeEmail_toLowercase() {
+    void assertNotBlocked_shouldThrow_whenMaxIpReached() {
+        stubIpPolicy();
 
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
-        when(bruteForceProperties.getMaxIpAttempts()).thenReturn(20);
+        when(loginAttemptRepository
+                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
+                .thenReturn(0L);
+
+        when(loginAttemptRepository
+                .countByIpAddressAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
+                .thenReturn((long) MAX_IP);
+
+        assertThrows(TooManyAttemptsException.class,
+                () -> userService.assertNotBlocked("test@mail.com", "127.0.0.1"));
+    }
+
+    @Test
+    void shouldLockByEmail_returnsTrue_whenThresholdReached() {
+        stubEmailPolicy();
+
+        when(loginAttemptRepository
+                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
+                .thenReturn((long) MAX_EMAIL);
+
+        assertTrue(userService.shouldLockByEmail("test@mail.com"));
+    }
+
+    @Test
+    void shouldLockByEmail_returnsFalse_whenBelowThreshold() {
+        stubEmailPolicy();
+
+        when(loginAttemptRepository
+                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
+                .thenReturn((long) MAX_EMAIL - 1);
+
+        assertFalse(userService.shouldLockByEmail("test@mail.com"));
+    }
+
+    @Test
+    void assertNotBlocked_shouldNormalizeEmail_toLowercase() {
+        stubIpPolicy();
 
         when(loginAttemptRepository
                 .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
@@ -113,20 +108,4 @@ class UserServiceBruteForceTest extends TestBase {
         verify(loginAttemptRepository)
                 .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(eq("test@mail.com"), any());
     }
-
-    @Test
-    void shouldLockByEmail_returnsFalse_whenBelowThreshold() {
-
-        when(bruteForceProperties.getWindowMinutes()).thenReturn(10);
-        when(bruteForceProperties.getMaxEmailAttempts()).thenReturn(3);
-
-        when(loginAttemptRepository
-                .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(anyString(), any()))
-                .thenReturn(2L);
-
-        boolean result = userService.shouldLockByEmail("test@mail.com");
-
-        assertFalse(result);
-    }
-
 }
