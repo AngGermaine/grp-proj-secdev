@@ -3,9 +3,6 @@ package com.secdev.project.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * Entity for tracking login attempts to implement anti-brute-force protection
- */
 @Entity
 @Table(name = "login_attempts")
 public class LoginAttempt {
@@ -26,7 +23,6 @@ public class LoginAttempt {
     @Column(length = 45)
     private String ipAddress;
 
-    // Constructors
     public LoginAttempt() {
     }
 
@@ -37,7 +33,6 @@ public class LoginAttempt {
         this.attemptTime = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

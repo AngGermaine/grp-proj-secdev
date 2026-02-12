@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-/**
- * User entity representing a user in the system
- */
 @Entity
 @Table(name = "users")
 public class User {
@@ -71,7 +68,6 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    // Constructors
     public User() {
     }
 
@@ -82,7 +78,6 @@ public class User {
         this.password = password;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

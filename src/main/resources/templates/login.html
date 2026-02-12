@@ -10,25 +10,22 @@
     <div class="max-w-md w-full bg-white rounded-xl shadow-lg border border-slate-200 p-8">
         <h2 class="text-3xl font-extrabold text-center mb-8">Sign In</h2>
 
-        <!-- INSERT SEGMENT HERE -->
         <div th:if="${param.error != null or param.blocked != null}" 
         class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
     
-           <!-- Specific message for Brute Force (Spec 4a) -->
         <p th:if="${param.blocked != null}">
         Too many failed attempts. Your access is temporarily restricted.
         </p>
-        <!-- Registration Success Message -->
+
         <div th:if="${param.registered}" 
             class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm">
             Registration successful! Please sign in.
         </div>
-        <!-- General Login Error -->
+
         <p th:if="${param.error != null}">
         Invalid email or password.
         </p>
       </div>
-        <!-- END OF SEGMENT -->
 
         <form th:action="@{/login}" method="POST" class="space-y-5">
             <div>
@@ -47,7 +44,7 @@
                 Log In
             </button>
         </form>
-        <!-- Add this section below -->
+        
         <div class="mt-6 text-center">
             <p class="text-sm text-slate-600">
                 Don't have an account? 

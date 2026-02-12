@@ -89,10 +89,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Helper to get client IP. 
-     * Handles cases where the app might be behind a proxy.
-     */
     private String getClientIp(HttpServletRequest request) {
         String xf = request.getHeader("X-Forwarded-For");
         if (xf == null || xf.isBlank()) {

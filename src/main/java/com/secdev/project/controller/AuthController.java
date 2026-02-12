@@ -24,11 +24,11 @@ public class AuthController {
 
     @PostMapping("/register")
     public String handleRegistration(
-            @ModelAttribute RegisterRequest request, // Automatically binds HTML fields
+            @ModelAttribute RegisterRequest request, 
             @RequestParam("profilePhoto") MultipartFile photo,
             Model model) {
         try {
-            // This calls your Tika detection, Hashing, and SQL save
+        
             userService.register(request, photo); 
             return "redirect:/login?registered=true";
         } catch (Exception e) {

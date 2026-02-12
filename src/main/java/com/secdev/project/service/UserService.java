@@ -31,17 +31,13 @@ import java.util.regex.Pattern;
 
 @Service
 public class UserService {     
-
-    // Fix S106: Use a logger instead of System.out
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private static final long MAX_PHOTO_BYTES = 5L * 1024 * 1024; 
     private static final Set<String> ALLOWED_IMAGE_MIME = Set.of("image/jpeg", "image/png", "image/webp");
 
-    // Spec 4c: Input Validation Regex Patterns
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
     
-    // Fix S6353: Use concise character class \d
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?\\d{8,15}$");
 
     private final UserRepository userRepository;
@@ -53,7 +49,6 @@ public class UserService {
     @Value("${file.upload-dir:src/main/resources/static/uploads/}")
     private String uploadDir;
 
-    // Fix S6437: Injected password from properties instead of hardcoded string
     @Value("${security.admin.password:AdminChangeMe123!}")
     private String defaultAdminPassword;
 
@@ -67,9 +62,7 @@ public class UserService {
         this.bruteForceProperties = bruteForceProperties;
     }
 
-    /**
-     * Spec 3: Administration panel - Create a default admin account on startup if none exists.
-     */
+
     @PostConstruct
     public void initDefaultAdmin() {
         if (userRepository.findByEmail("admin@secdev.com").isEmpty()) {
@@ -77,13 +70,12 @@ public class UserService {
             admin.setFullName("Default Administrator");
             admin.setEmail("admin@secdev.com");
             admin.setPhoneNumber("+63912345678");
-            admin.setPassword(passwordEncoder.encode(defaultAdminPassword)); // Fixed hardcoded pass
+            admin.setPassword(passwordEncoder.encode(defaultAdminPassword)); 
             admin.setRole(Role.ADMIN);
             admin.setEnabled(true);
             admin.setAccountNonLocked(true);
             userRepository.save(admin);
             
-            // Fixed System.out use
             logger.info("Default Admin Account Created: admin@secdev.com");
         }
     }
