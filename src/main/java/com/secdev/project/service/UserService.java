@@ -1,5 +1,6 @@
 package com.secdev.project.service;
 
+import com.secdev.project.config.BruteForceProperties;
 import com.secdev.project.dto.RegisterRequest;
 
 import com.secdev.project.model.LoginAttempt;
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.io.IOException;
@@ -28,11 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class UserService {
-
-    private static final int MAX_FAILED_BY_EMAIL = 5;        
-    private static final int MAX_FAILED_BY_IP = 20;         
-    private static final int WINDOW_MINUTES = 10;          
+public class UserService {     
 
     private static final long MAX_PHOTO_BYTES = 5L * 1024 * 1024; 
 
@@ -41,6 +39,7 @@ public class UserService {
     );
 
     private final UserRepository userRepository;
+    private final BruteForceProperties bruteForceProperties;
     private final LoginAttemptRepository loginAttemptRepository;
     private final PasswordEncoder passwordEncoder;
     private final Tika tika = new Tika();
@@ -49,11 +48,25 @@ public class UserService {
     private String uploadDir;
 
     public UserService(UserRepository userRepository,
-                       LoginAttemptRepository loginAttemptRepository,
-                       PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.loginAttemptRepository = loginAttemptRepository;
-        this.passwordEncoder = passwordEncoder;
+                   LoginAttemptRepository loginAttemptRepository,
+                   PasswordEncoder passwordEncoder,
+                   BruteForceProperties bruteForceProperties) {
+    this.userRepository = userRepository;
+    this.loginAttemptRepository = loginAttemptRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.bruteForceProperties = bruteForceProperties;
+}
+
+
+    @Transactional
+    public void lockAccount(String email) {
+        String normalized = normalizeEmail(email);
+        userRepository.findByEmail(normalized).ifPresent(u -> {
+            if (u.isAccountNonLocked()) {
+                u.setAccountNonLocked(false);
+                userRepository.save(u);
+            }
+        });
     }
 
     public User register(RegisterRequest req, MultipartFile profilePhoto) throws IOException {
@@ -85,7 +98,7 @@ public class UserService {
     }
 
     public void assertNotBlocked(String email, String ipAddress) {
-        LocalDateTime after = LocalDateTime.now().minusMinutes(WINDOW_MINUTES);
+        LocalDateTime after = LocalDateTime.now().minusMinutes(bruteForceProperties.getWindowMinutes());
         String normalizedEmail = normalizeEmail(email);
 
         long emailFails = loginAttemptRepository
@@ -94,7 +107,7 @@ public class UserService {
         long ipFails = loginAttemptRepository
                 .countByIpAddressAndSuccessfulIsFalseAndAttemptTimeAfter(ipAddress, after);
 
-        if (emailFails >= MAX_FAILED_BY_EMAIL || ipFails >= MAX_FAILED_BY_IP) {
+        if (emailFails >= bruteForceProperties.getMaxEmailAttempts() || ipFails >= bruteForceProperties.getMaxIpAttempts()) {
             throw new TooManyAttemptsException("Too many login attempts. Try again later.");
         }
     }
@@ -140,6 +153,14 @@ public class UserService {
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase();
     }
+
+    public boolean shouldLockByEmail(String email) {
+    LocalDateTime after = LocalDateTime.now().minusMinutes(bruteForceProperties.getWindowMinutes());
+    long emailFails = loginAttemptRepository
+            .countByEmailAndSuccessfulIsFalseAndAttemptTimeAfter(normalizeEmail(email), after);
+    return emailFails >= bruteForceProperties.getMaxEmailAttempts();
+}
+
 
     private String mimeToExtension(String mime) {
         return switch (mime) {

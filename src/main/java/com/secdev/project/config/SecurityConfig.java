@@ -2,22 +2,17 @@ package com.secdev.project.config;
 
 import com.secdev.project.model.User;
 import com.secdev.project.service.UserService;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.List;
 
@@ -25,12 +20,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final UserService userService;
+    private final AntiBruteForce antiBruteForce;
 
     @Value("${security.bcrypt.strength:12}")
     private int bcryptStrength;
 
-    public SecurityConfig(UserService userService) {
+    public SecurityConfig(UserService userService, AntiBruteForce antiBruteForce) {
         this.userService = userService;
+        this.antiBruteForce = antiBruteForce;
     }
 
     @Bean
@@ -44,10 +41,6 @@ public class SecurityConfig {
             User user = userService.findByEmail(username)
                     .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
 
-            if (!user.isAccountNonLocked()) {
-                throw new BadCredentialsException("Account locked");
-            }
-
             return new org.springframework.security.core.userdetails.User(
                     user.getEmail(),
                     user.getPassword(),
@@ -60,12 +53,13 @@ public class SecurityConfig {
         };
     }
 
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
             .csrf(csrf -> csrf.disable()) // enable in production if using forms properly
+
+            .addFilterBefore(antiBruteForce, UsernamePasswordAuthenticationFilter.class)
 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/register", "/login", "/css/**", "/js/**").permitAll()
@@ -75,44 +69,39 @@ public class SecurityConfig {
 
             .formLogin(form -> form
                 .loginPage("/login")
-                .successHandler((request, response, authentication) -> {
 
+                .successHandler((request, response, authentication) -> {
                     String email = authentication.getName();
                     String ip = getClientIp(request);
-
                     userService.recordLoginAttempt(email, true, ip);
-
                     response.sendRedirect("/dashboard");
                 })
-                .failureHandler((request, response, exception) -> {
 
+                .failureHandler((request, response, exception) -> {
                     String email = request.getParameter("username");
                     String ip = getClientIp(request);
 
                     userService.recordLoginAttempt(email, false, ip);
 
+                    if (email != null && userService.shouldLockByEmail(email)) {
+                        userService.lockAccount(email);
+                    }
+
                     response.sendRedirect("/login?error");
                 })
+
                 .permitAll()
             )
 
             .logout(logout -> logout
-                .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")
             );
 
         return http.build();
     }
 
-    @Bean
-    public org.springframework.security.authentication.AuthenticationManager authenticationManager(
-            org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration config)
-            throws Exception {
-        return config.getAuthenticationManager();
-    }
-
     private String getClientIp(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        return (xfHeader == null) ? request.getRemoteAddr() : xfHeader.split(",")[0];
+        String xf = request.getHeader("X-Forwarded-For");
+        return (xf == null || xf.isBlank()) ? request.getRemoteAddr() : xf.split(",")[0].trim();
     }
 }
