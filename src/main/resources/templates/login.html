@@ -18,7 +18,11 @@
         <p th:if="${param.blocked != null}">
         Too many failed attempts. Your access is temporarily restricted.
         </p>
-    
+        <!-- Registration Success Message -->
+        <div th:if="${param.registered}" 
+            class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm">
+            Registration successful! Please sign in.
+        </div>
         <!-- General Login Error -->
         <p th:if="${param.error != null}">
         Invalid email or password.
@@ -43,6 +47,16 @@
                 Log In
             </button>
         </form>
+        <!-- Add this section below -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-slate-600">
+                Don't have an account? 
+                <a th:href="@{/register}" class="text-blue-600 font-bold hover:text-blue-700 hover:underline transition">
+                    Register here
+                </a>
+            </p>
+        </div>
+    </div>
     </div>
 
 </body>

@@ -9,6 +9,11 @@
 
     <div class="max-w-xl w-full bg-white rounded-2xl shadow-xl border p-8">
         <h2 class="text-3xl font-bold text-center mb-10">Create Account</h2>
+        <!-- Display error from Catch block -->
+        <div th:if="${error}" 
+            class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+            <p th:text="${error}"></p>
+        </div>
 
         <form th:action="@{/register}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
@@ -48,6 +53,10 @@
                 </button>
             </div>
         </form>
+        <p class="text-sm text-slate-600">
+          Already have an account? 
+          <a th:href="@{/login}" class="text-blue-600 font-bold hover:underline">Sign In</a>
+        </p>
     </div>
 
 </body>

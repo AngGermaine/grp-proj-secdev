@@ -32,7 +32,7 @@ public class AuthController {
             userService.register(request, photo); 
             return "redirect:/login?registered=true";
         } catch (Exception e) {
-            // Shows the error message on the "ugly" UI (e.g., "Invalid file type")
+
             model.addAttribute("error", e.getMessage());
             return "register";
         }
