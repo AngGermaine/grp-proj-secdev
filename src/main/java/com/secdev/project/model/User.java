@@ -51,6 +51,9 @@ public class User {
     @Column(nullable = false)
     private boolean accountNonLocked = true;
 
+    @Column
+    private LocalDateTime lockTime;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -151,6 +154,15 @@ public class User {
     public void setAccountNonLocked(boolean accountNonLocked) {
         this.accountNonLocked = accountNonLocked;
     }
+
+    public LocalDateTime getLockTime() {
+    return lockTime;
+    }
+
+    public void setLockTime(LocalDateTime lockTime) {
+        this.lockTime = lockTime;
+    }
+
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

@@ -57,17 +57,38 @@ public class UserService {
     this.bruteForceProperties = bruteForceProperties;
 }
 
-
     @Transactional
     public void lockAccount(String email) {
         String normalized = normalizeEmail(email);
         userRepository.findByEmail(normalized).ifPresent(u -> {
             if (u.isAccountNonLocked()) {
                 u.setAccountNonLocked(false);
+                u.setLockTime(LocalDateTime.now());
                 userRepository.save(u);
             }
         });
     }
+
+    @Transactional
+    public void checkAndUnlockIfExpired(User user) {
+        if (user.isAccountNonLocked()) {
+            return;
+        }
+
+        if (user.getLockTime() == null) {
+            return;
+        }
+
+        LocalDateTime unlockTime = user.getLockTime()
+                .plusMinutes(bruteForceProperties.getLockMinutes());
+
+        if (LocalDateTime.now().isAfter(unlockTime)) {
+            user.setAccountNonLocked(true);
+            user.setLockTime(null);
+            userRepository.save(user);
+        }
+    }
+
 
     public User register(RegisterRequest req, MultipartFile profilePhoto) throws IOException {
         String email = normalizeEmail(req.getEmail());

@@ -10,6 +10,7 @@ public class BruteForceProperties {
     private int maxEmailAttempts;
     private int maxIpAttempts;
     private int windowMinutes;
+    private int lockMinutes;
 
     public int getMaxEmailAttempts() {
         return maxEmailAttempts;
@@ -33,5 +34,13 @@ public class BruteForceProperties {
 
     public void setWindowMinutes(int windowMinutes) {
         this.windowMinutes = windowMinutes;
+    }
+
+    public int getLockMinutes() {
+        return lockMinutes;
+    }
+
+    public void setLockMinutes(int lockMinutes) {
+        this.lockMinutes = lockMinutes;
     }
 }

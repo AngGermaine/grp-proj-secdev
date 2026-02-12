@@ -39,7 +39,14 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return username -> {
             User user = userService.findByEmail(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
+                    .orElseThrow(() -> new UsernameNotFoundException("Login failed."));
+
+            userService.checkAndUnlockIfExpired(user);
+
+            if (!user.isAccountNonLocked()) {
+                throw new UsernameNotFoundException("Login failed.");
+            }
+
 
             return new org.springframework.security.core.userdetails.User(
                     user.getEmail(),
