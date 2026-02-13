@@ -25,16 +25,8 @@ public class AuthController {
     @PostMapping("/register")
     public String handleRegistration(
             @ModelAttribute RegisterRequest request, 
-            @RequestParam("profilePhoto") MultipartFile photo,
-            Model model) {
-        try {
-        
-            userService.register(request, photo); 
-            return "redirect:/login?registered=true";
-        } catch (Exception e) {
-
-            model.addAttribute("error", e.getMessage());
-            return "register";
-        }
+            @RequestParam("profilePhoto") MultipartFile photo) throws Exception {
+        userService.register(request, photo);
+        return "redirect:/login?registered=true";
     }
 }

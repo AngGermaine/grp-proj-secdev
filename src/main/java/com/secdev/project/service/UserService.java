@@ -76,7 +76,7 @@ public class UserService {
             admin.setAccountNonLocked(true);
             userRepository.save(admin);
             
-            logger.info("Default Admin Account Created: admin@secdev.com");
+            logger.info("Default Admin Account Created");
         }
     }
 
@@ -86,7 +86,7 @@ public class UserService {
 
         String email = normalizeEmail(req.getEmail());
         if (userRepository.existsByEmail(email)) {
-            throw new BadRequestException("Email already in use.");
+            throw new BadRequestException("Registration Failed. Please try again.");
         }
 
         User user = new User();
