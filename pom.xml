@@ -11,8 +11,8 @@
 	<groupId>com.secdev</groupId>
 	<artifactId>project</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>project</name>
-	<description>Demo project for Spring Boot</description>
+	<name>Simple Web App</name>
+	<description>CSSECDEV PROJECT</description>
 	<url/>
 	<licenses>
 		<license/>
