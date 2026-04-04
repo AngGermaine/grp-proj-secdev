@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Lazy;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -134,7 +135,7 @@ public class UserService {
                 u.setAccountNonLocked(false);
                 u.setLockTime(LocalDateTime.now());
                 userRepository.save(u);
-                logger.warn("Account locked: {}", email);
+                logger.warn("AUTH EVENT username={} action=ACCOUNT_LOCK status=LOCKED", email);
             }
         });
     }
@@ -148,7 +149,7 @@ public class UserService {
             user.setAccountNonLocked(true);
             user.setLockTime(null);
             userRepository.save(user);
-            logger.info("Account unlocked: {}", user.getEmail());
+            logger.info("AUTH EVENT username={} action=ACCOUNT_UNLOCK status=SUCCESS", user.getEmail());
         }
     }
 
@@ -166,15 +167,25 @@ public class UserService {
 
         if (emailFails >= bruteForceProperties.getMaxEmailAttempts() || 
             ipFails >= bruteForceProperties.getMaxIpAttempts()) {
-            logger.warn("Blocking login attempt for {} from IP {}", email, ipAddress);
+            logger.warn("AUTH EVENT username={} action=LOGIN_BLOCKED status=DENIED ip={}", email, ipAddress);
             throw new TooManyAttemptsException("Too many login attempts. Try again later.");
         }
     }
 
     public void recordLoginAttempt(String email, boolean success, String ipAddress) {
-        LoginAttempt attempt = new LoginAttempt(normalizeEmail(email), success, ipAddress);
+        String normalizedEmail = normalizeEmail(email);
+
+        LoginAttempt attempt = new LoginAttempt(normalizedEmail, success, ipAddress);
         attempt.setAttemptTime(LocalDateTime.now());
         loginAttemptRepository.save(attempt);
+
+        if (success) {
+            logger.info("AUTH EVENT username={} action=LOGIN status=SUCCESS ip={}",
+                    normalizedEmail, ipAddress);
+        } else {
+            logger.warn("AUTH EVENT username={} action=LOGIN status=FAILED ip={}",
+                    normalizedEmail, ipAddress);
+        }
     }
 
     public boolean shouldLockByEmail(String email) {
@@ -217,5 +228,25 @@ public class UserService {
             case "image/webp" -> ".webp";
             default -> ".bin";
         };
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Transactional
+    public void unlockUser(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAccountNonLocked(true);
+        user.setLockTime(null);
+        userRepository.save(user);
+        logger.info("AUTH EVENT username={} action=ACCOUNT_UNLOCK status=SUCCESS", user.getEmail());
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        userRepository.delete(user);
+        logger.info("AUTH EVENT username={} action=ACCOUNT_DELETE status=SUCCESS", user.getEmail());
     }
 }

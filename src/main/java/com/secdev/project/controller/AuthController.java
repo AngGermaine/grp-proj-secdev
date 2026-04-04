@@ -8,11 +8,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.security.core.Authentication;
 
 @Controller
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final UserService userService;
 
@@ -30,9 +34,17 @@ public class AuthController {
     public String handleRegistration(
             @ModelAttribute RegisterRequest request, 
             @RequestParam("profilePhoto") MultipartFile photo) throws Exception {
-        userService.register(request, photo);
-        return "redirect:/login?registered=true";
+        try {
+            userService.register(request, photo);
+            logger.info("AUTH EVENT username={} action=REGISTER status=SUCCESS", request.getEmail());
+            return "redirect:/login?registered=true";
+        } catch (Exception e) {
+            logger.warn("AUTH EVENT username={} action=REGISTER status=FAILED reason={}",
+                    request.getEmail(), e.getMessage());
+            throw e;
+        }
     }
+
 
    @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -44,6 +56,8 @@ public class AuthController {
         
         model.addAttribute("username", username);
         model.addAttribute("isAdmin", isAdmin);
+
+        logger.info("AUTH EVENT username={} action=ACCESS_DASHBOARD status=SUCCESS", username);
 
         // 2 add code here to fetch the "Assets" from the database
         // model.addAttribute("assets", assetService.findAllForUser(username)); for example
