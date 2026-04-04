@@ -27,20 +27,20 @@
             
             <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
                 <h2 class="text-xl font-bold mb-6 text-slate-800 underline decoration-blue-500">1. Register New Asset</h2>
-                <form class="space-y-4">
+                <form th:action="@{/assets/add}" method="post" class="space-y-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Asset Name (Text)</label>
-                        <input type="text" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Dell Latitude">
+                        <input type="text" name="name" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Dell Latitude">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Value (Numeric 1)</label>
-                        <input type="number" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
+                        <input type="number" step="0.01" name="value" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Quantity (Numeric 2)</label>
-                        <input type="number" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1">
+                        <input type="number" name="quantity" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1">
                     </div>
-                    <button type="button" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">Save Asset</button>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">Save Asset</button>
                 </form>
             </div>
 
@@ -57,12 +57,25 @@
                             </tr>
                         </thead>
                         <tbody class="text-slate-700">
-                            <tr class="border-b last:border-0 hover:bg-slate-50">
-                                <td class="py-4 font-medium">Sample MacBook</td>
-                                <td class="py-4">$2,500</td>
-                                <td class="py-4">2</td>
+                            <tr th:each="asset : ${assets}" class="border-b last:border-0 hover:bg-slate-50">
+                                <td class="py-4 font-medium" th:text="${asset.name}"></td>
+                                <td class="py-4" th:text="${asset.value}"></td>
+                                <td class="py-4" th:text="${asset.quantity}"></td>
                                 <td class="py-4">
-                                    <button onclick="openEditModal('Sample MacBook', 2500, 2)"  class="text-blue-600 hover:underline font-bold">Edit</button>
+                                    <button
+                                        type="button"
+                                        th:attr="onclick=|openEditModal(${asset.id}, '${asset.name}', ${asset.value}, ${asset.quantity})|"
+                                        class="text-blue-600 hover:underline font-bold">
+                                        Edit
+                                    </button>
+                                    <form th:action="@{/assets/{id}/delete(id=${asset.id})}" method="post" class="inline">
+                                        <button
+                                            type="submit"
+                                            onclick="return confirm('Are you sure you want to delete this asset?')"
+                                            class="text-red-600 hover:underline font-bold">
+                                            Delete
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         </tbody>
