@@ -5,11 +5,13 @@ import com.secdev.project.model.Asset;
 import com.secdev.project.model.User;
 import com.secdev.project.repo.AssetRepository;
 import com.secdev.project.repo.UserRepository;
+import com.secdev.project.util.LoggingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,6 +19,7 @@ import java.util.List;
 public class AssetService {
 
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
+    private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
 
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
@@ -47,12 +50,18 @@ public class AssetService {
         asset.setUpdatedAt(LocalDateTime.now());
         asset.setOwner(user);
 
-        Asset saved = assetRepository.save(asset);
+        try {
+            Asset saved = assetRepository.save(asset);
 
-        logger.info("TRANSACTION EVENT user={} action=ADD_ASSET status=SUCCESS assetId={} assetName={}",
-                userEmail, saved.getId(), saved.getName());
+            auditLogger.info("TRANSACTION EVENT user={} action=ADD_ASSET status=SUCCESS assetId={} assetName={} value={} quantity={}",
+                    LoggingUtil.sanitizeForLog(userEmail), saved.getId(), LoggingUtil.sanitizeForLog(saved.getName()), saved.getValue(), saved.getQuantity());
 
-        return saved;
+            return saved;
+        } catch (Exception e) {
+            auditLogger.error("TRANSACTION EVENT user={} action=ADD_ASSET status=FAILED assetName={} value={} quantity={} error={}",
+                    LoggingUtil.sanitizeForLog(userEmail), LoggingUtil.sanitizeForLog(request.getName()), request.getValue(), request.getQuantity(), e.getMessage());
+            throw e;
+        }
     }
 
     @Transactional
@@ -60,17 +69,29 @@ public class AssetService {
         Asset asset = assetRepository.findByIdAndOwnerEmail(assetId, userEmail)
                 .orElseThrow(() -> new RuntimeException("Asset not found or not owned by user"));
 
+        String oldName = asset.getName();
+        BigDecimal oldValue = asset.getValue();
+        int oldQuantity = asset.getQuantity();
+
         asset.setName(request.getName().trim());
         asset.setValue(request.getValue());
         asset.setQuantity(request.getQuantity());
         asset.setUpdatedAt(LocalDateTime.now());
 
-        Asset saved = assetRepository.save(asset);
+        try {
+            Asset saved = assetRepository.save(asset);
 
-        logger.info("TRANSACTION EVENT user={} action=EDIT_ASSET status=SUCCESS assetId={} assetName={}",
-                userEmail, saved.getId(), saved.getName());
+            auditLogger.info("TRANSACTION EVENT user={} action=EDIT_ASSET status=SUCCESS assetId={} oldName={} oldValue={} oldQuantity={} newName={} newValue={} newQuantity={}",
+                    LoggingUtil.sanitizeForLog(userEmail), saved.getId(), 
+                    LoggingUtil.sanitizeForLog(oldName), oldValue, oldQuantity,
+                    LoggingUtil.sanitizeForLog(saved.getName()), saved.getValue(), saved.getQuantity());
 
-        return saved;
+            return saved;
+        } catch (Exception e) {
+            auditLogger.error("TRANSACTION EVENT user={} action=EDIT_ASSET status=FAILED assetId={} newName={} newValue={} newQuantity={} error={}",
+                    LoggingUtil.sanitizeForLog(userEmail), assetId, LoggingUtil.sanitizeForLog(request.getName()), request.getValue(), request.getQuantity(), e.getMessage());
+            throw e;
+        }
     }
 
     @Transactional
@@ -78,10 +99,16 @@ public class AssetService {
         Asset asset = assetRepository.findByIdAndOwnerEmail(assetId, userEmail)
                 .orElseThrow(() -> new RuntimeException("Asset not found or not owned by user"));
 
-        assetRepository.delete(asset);
+        try {
+            auditLogger.info("TRANSACTION EVENT user={} action=DELETE_ASSET status=SUCCESS assetId={} assetName={} value={} quantity={}",
+                    LoggingUtil.sanitizeForLog(userEmail), asset.getId(), LoggingUtil.sanitizeForLog(asset.getName()), asset.getValue(), asset.getQuantity());
 
-        logger.info("TRANSACTION EVENT user={} action=DELETE_ASSET status=SUCCESS assetId={} assetName={}",
-                userEmail, asset.getId(), asset.getName());
+            assetRepository.delete(asset);
+        } catch (Exception e) {
+            auditLogger.error("TRANSACTION EVENT user={} action=DELETE_ASSET status=FAILED assetId={} error={}",
+                    LoggingUtil.sanitizeForLog(userEmail), assetId, e.getMessage());
+            throw e;
+        }
     }
 
     @Transactional
@@ -89,9 +116,15 @@ public class AssetService {
         Asset asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new RuntimeException("Asset not found"));
 
-        assetRepository.delete(asset);
+        try {
+            auditLogger.info("TRANSACTION EVENT admin={} action=DELETE_ASSET status=SUCCESS assetId={} assetName={} value={} quantity={}",
+                    LoggingUtil.sanitizeForLog(adminEmail), asset.getId(), LoggingUtil.sanitizeForLog(asset.getName()), asset.getValue(), asset.getQuantity());
 
-        logger.info("ADMIN ACTION admin={} action=DELETE_ANY_ASSET targetAssetId={} targetAssetName={}",
-                adminEmail, asset.getId(), asset.getName());
+            assetRepository.delete(asset);
+        } catch (Exception e) {
+            auditLogger.error("TRANSACTION EVENT admin={} action=DELETE_ASSET status=FAILED assetId={} error={}",
+                    LoggingUtil.sanitizeForLog(adminEmail), assetId, e.getMessage());
+            throw e;
+        }
     }
 }

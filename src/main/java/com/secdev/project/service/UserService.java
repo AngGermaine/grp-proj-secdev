@@ -9,6 +9,7 @@ import com.secdev.project.repo.LoginAttemptRepository;
 import com.secdev.project.repo.UserRepository;
 import com.secdev.project.service.exceptions.BadRequestException;
 import com.secdev.project.service.exceptions.TooManyAttemptsException;
+import com.secdev.project.util.LoggingUtil;
 
 import jakarta.annotation.PostConstruct;
 import org.apache.tika.Tika;
@@ -33,6 +34,7 @@ import java.util.regex.Pattern;
 @Service
 public class UserService {     
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
 
     private static final long MAX_PHOTO_BYTES = 5L * 1024 * 1024; 
     private static final Set<String> ALLOWED_IMAGE_MIME = Set.of("image/jpeg", "image/png", "image/webp");
@@ -114,7 +116,7 @@ public class UserService {
                 u.setAccountNonLocked(false);
                 u.setLockTime(LocalDateTime.now());
                 userRepository.save(u);
-                logger.warn("AUTH EVENT username={} action=ACCOUNT_LOCK status=LOCKED", email);
+                auditLogger.warn("AUTH EVENT username={} action=ACCOUNT_LOCK status=LOCKED", LoggingUtil.sanitizeForLog(email));
             }
         });
     }
@@ -128,7 +130,7 @@ public class UserService {
             user.setAccountNonLocked(true);
             user.setLockTime(null);
             userRepository.save(user);
-            logger.info("AUTH EVENT username={} action=ACCOUNT_UNLOCK status=SUCCESS", user.getEmail());
+            auditLogger.info("AUTH EVENT username={} action=ACCOUNT_UNLOCK status=SUCCESS", LoggingUtil.sanitizeForLog(user.getEmail()));
         }
     }
 
@@ -146,7 +148,7 @@ public class UserService {
 
         if (emailFails >= bruteForceProperties.getMaxEmailAttempts() || 
             ipFails >= bruteForceProperties.getMaxIpAttempts()) {
-            logger.warn("AUTH EVENT username={} action=LOGIN_BLOCKED status=DENIED ip={}", email, ipAddress);
+            auditLogger.warn("AUTH EVENT username={} action=LOGIN_BLOCKED status=DENIED ip={}", LoggingUtil.sanitizeForLog(email), LoggingUtil.sanitizeForLog(ipAddress));
             throw new TooManyAttemptsException("Too many login attempts. Try again later.");
         }
     }

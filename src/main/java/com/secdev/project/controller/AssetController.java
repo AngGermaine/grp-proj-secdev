@@ -2,9 +2,13 @@ package com.secdev.project.controller;
 
 import com.secdev.project.dto.AssetRequest;
 import com.secdev.project.service.AssetService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -24,7 +28,14 @@ public class AssetController {
     }
 
     @PostMapping("/add")
-    public String addAsset(@ModelAttribute AssetRequest request, RedirectAttributes redirectAttributes) {
+    public String addAsset(@Valid @ModelAttribute AssetRequest request,
+                        BindingResult result,
+                        RedirectAttributes redirectAttributes) {
+
+        if (result.hasErrors()) {
+            redirectAttributes.addFlashAttribute("error", "Invalid input");
+            return "redirect:/dashboard";
+        }
         try {
             assetService.addAsset(getCurrentUsername(), request);
             redirectAttributes.addFlashAttribute("success", "Asset added successfully");

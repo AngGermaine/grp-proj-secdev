@@ -3,6 +3,7 @@ package com.secdev.project.controller;
 import com.secdev.project.dto.RegisterRequest;
 import com.secdev.project.service.AssetService;
 import com.secdev.project.service.UserService;
+import com.secdev.project.util.LoggingUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
 
     private final UserService userService;
     private final AssetService assetService;
@@ -48,11 +50,11 @@ public class AuthController {
             @RequestParam("profilePhoto") MultipartFile photo) throws Exception {
         try {
             userService.register(request, photo);
-            logger.info("AUTH EVENT username={} action=REGISTER status=SUCCESS", request.getEmail());
+            auditLogger.info("AUTH EVENT username={} action=REGISTER status=SUCCESS", LoggingUtil.sanitizeForLog(request.getEmail()));
             return "redirect:/login?registered=true";
         } catch (Exception e) {
-            logger.warn("AUTH EVENT username={} action=REGISTER status=FAILED reason={}",
-                    request.getEmail(), e.getMessage());
+            auditLogger.warn("AUTH EVENT username={} action=REGISTER status=FAILED reason={}",
+                    LoggingUtil.sanitizeForLog(request.getEmail()), LoggingUtil.sanitizeForLog(e.getMessage()));
             throw e;
         }
     }
@@ -69,7 +71,7 @@ public class AuthController {
         model.addAttribute("isAdmin", isAdmin);
         model.addAttribute("assets", assetService.findAllForUser(username));
 
-        logger.info("AUTH EVENT username={} action=ACCESS_DASHBOARD status=SUCCESS", username);
+        auditLogger.info("AUTH EVENT username={} action=ACCESS_DASHBOARD status=SUCCESS", LoggingUtil.sanitizeForLog(username));
 
         return "dashboard";
     }

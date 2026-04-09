@@ -1,6 +1,8 @@
 package com.secdev.project.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,15 +12,23 @@ public class Asset {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
+    @Size(max = 100)
     private String name;
 
-    @Column(name = "asset_value")
-    private Double value;
+    @Column(name = "asset_value", precision = 10, scale = 2)
+    @NotNull
+    @DecimalMin(value = "0.00", inclusive = true)
+    @DecimalMax(value = "100000000.00")
+    @Digits(integer = 8, fraction = 2)
+    private BigDecimal value;
 
+    @NotNull
+    @Min(0)
+    @Max(100000)
     private Integer quantity;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
     @ManyToOne
@@ -39,11 +49,11 @@ public class Asset {
         this.name = name;
     }
 
-    public Double getValue() {
+    public BigDecimal getValue() {
         return value;
     }
 
-    public void setValue(Double value) {
+    public void setValue(BigDecimal value) {
         this.value = value;
     }
 

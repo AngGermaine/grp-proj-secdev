@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Configuration
@@ -104,7 +105,7 @@ public class DataSeeder {
 
         Asset asset = new Asset();
         asset.setName(name);
-        asset.setValue(value);
+        asset.setValue(BigDecimal.valueOf(value));
         asset.setQuantity(quantity);
         asset.setOwner(owner);
         asset.setCreatedAt(LocalDateTime.now());

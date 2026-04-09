@@ -1,3 +1,14 @@
+document.querySelectorAll('.edit-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        openEditModal(
+            this.dataset.id,
+            this.dataset.name,
+            this.dataset.value,
+            this.dataset.quantity
+        );
+    });
+});
+
 // Edit Modal
 function openEditModal(id, name, value, qty) {
     document.getElementById('editId').value = id;
@@ -19,9 +30,9 @@ function closeModal() {
     modal.classList.remove('flex');
 }
 
-window.onclick = function(event) {
+window.addEventListener('click', function (event) {
     const modal = document.getElementById('editModal');
-    if (event.target == modal) {
+    if (event.target === modal) {
         closeModal();
     }
-}
+});
