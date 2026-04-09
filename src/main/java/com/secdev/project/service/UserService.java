@@ -50,9 +50,6 @@ public class UserService {
     @Value("${file.upload-dir:src/main/resources/static/uploads/}")
     private String uploadDir;
 
-    @Value("${security.admin.password:AdminChangeMe123!}")
-    private String defaultAdminPassword;
-
     public UserService(UserRepository userRepository,
                        LoginAttemptRepository loginAttemptRepository,
                        @Lazy PasswordEncoder passwordEncoder,
@@ -61,24 +58,6 @@ public class UserService {
         this.loginAttemptRepository = loginAttemptRepository;
         this.passwordEncoder = passwordEncoder;
         this.bruteForceProperties = bruteForceProperties;
-    }
-
-
-    @PostConstruct
-    public void initDefaultAdmin() {
-        if (userRepository.findByEmail("admin@secdev.com").isEmpty()) {
-            User admin = new User();
-            admin.setFullName("Default Administrator");
-            admin.setEmail("admin@secdev.com");
-            admin.setPhoneNumber("+63912345678");
-            admin.setPassword(passwordEncoder.encode(defaultAdminPassword)); 
-            admin.setRole(Role.ADMIN);
-            admin.setEnabled(true);
-            admin.setAccountNonLocked(true);
-            userRepository.save(admin);
-            
-            logger.info("Default Admin Account Created");
-        }
     }
 
     @Transactional
