@@ -3,6 +3,7 @@ package com.secdev.project.config;
 import com.secdev.project.model.User;
 import com.secdev.project.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -20,6 +21,8 @@ public class SecurityConfig {
 
     private final UserService userService;
     private final AntiBruteForce antiBruteForce;
+    @Value("${security.trust-proxy:false}")
+    private boolean trustProxy;
 
     public SecurityConfig(@Lazy UserService userService, @Lazy AntiBruteForce antiBruteForce) {
         this.userService = userService;
@@ -35,7 +38,7 @@ public class SecurityConfig {
             userService.checkAndUnlockIfExpired(user);
 
             if (!user.isAccountNonLocked()) {
-                throw new UsernameNotFoundException("Account is locked.");
+                throw new UsernameNotFoundException("Invalid credentials.");
             }
 
             return new org.springframework.security.core.userdetails.User(
@@ -93,10 +96,12 @@ public class SecurityConfig {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        if (xf == null || xf.isBlank()) {
-            return request.getRemoteAddr();
+        if (trustProxy) {
+            String xf = request.getHeader("X-Forwarded-For");
+            if (xf != null && !xf.isBlank()) {
+                return xf.split(",")[0].trim();
+            }
         }
-        return xf.split(",")[0].trim();
+        return request.getRemoteAddr();
     }
 }

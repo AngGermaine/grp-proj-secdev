@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -15,6 +16,8 @@ import java.io.IOException;
 public class AntiBruteForce extends OncePerRequestFilter {
 
     private final UserService userService;
+    @Value("${security.trust-proxy:false}")
+    private boolean trustProxy;
 
     public AntiBruteForce(UserService userService) {
         this.userService = userService;
@@ -42,7 +45,12 @@ public class AntiBruteForce extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        return (xf == null || xf.isBlank()) ? request.getRemoteAddr() : xf.split(",")[0].trim();
+        if (trustProxy) {
+            String xf = request.getHeader("X-Forwarded-For");
+            if (xf != null && !xf.isBlank()) {
+                return xf.split(",")[0].trim();
+            }
+        }
+        return request.getRemoteAddr();
     }
 }
