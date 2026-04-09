@@ -15,6 +15,7 @@
         </div>
 
         <form th:action="@{/register}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             
             <div class="md:col-span-2">
                 <label for="fullName" class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>

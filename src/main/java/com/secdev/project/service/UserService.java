@@ -161,10 +161,10 @@ public class UserService {
         loginAttemptRepository.save(attempt);
 
         if (success) {
-            logger.info("AUTH EVENT username={} action=LOGIN status=SUCCESS ip={}",
+            auditLogger.info("AUTH EVENT username={} action=LOGIN status=SUCCESS ip={}",
                     normalizedEmail, ipAddress);
         } else {
-            logger.warn("AUTH EVENT username={} action=LOGIN status=FAILED ip={}",
+            auditLogger.warn("AUTH EVENT username={} action=LOGIN status=FAILED ip={}",
                     normalizedEmail, ipAddress);
         }
     }
@@ -221,14 +221,14 @@ public class UserService {
         user.setAccountNonLocked(true);
         user.setLockTime(null);
         userRepository.save(user);
-        logger.info("AUTH EVENT username={} action=ACCOUNT_UNLOCK status=SUCCESS", user.getEmail());
+        auditLogger.info("AUTH EVENT username={} action=ACCOUNT_UNLOCK status=SUCCESS", LoggingUtil.sanitizeForLog(user.getEmail()));
     }
 
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
         userRepository.delete(user);
-        logger.info("ADMIN ACTION action=DELETE_USER targetUser={} status=SUCCESS", user.getEmail());
+        auditLogger.info("ADMIN ACTION action=DELETE_USER targetUser={} status=SUCCESS", LoggingUtil.sanitizeForLog(user.getEmail()));
     }
 
     @Transactional
@@ -237,7 +237,7 @@ public class UserService {
         user.setEnabled(!user.isEnabled());
         userRepository.save(user);
         String status = user.isEnabled() ? "ENABLED" : "DISABLED";
-        logger.info("ADMIN ACTION action=TOGGLE_USER_STATUS targetUser={} status={}", user.getEmail(), status);
+        auditLogger.info("ADMIN ACTION action=TOGGLE_USER_STATUS targetUser={} status={}", LoggingUtil.sanitizeForLog(user.getEmail()), status);
     }
 
     @Transactional
@@ -246,8 +246,8 @@ public class UserService {
         Role oldRole = user.getRole();
         user.setRole(newRole);
         userRepository.save(user);
-        logger.info("ADMIN ACTION action=CHANGE_ROLE targetUser={} oldRole={} newRole={}", 
-                user.getEmail(), oldRole, newRole);
+        auditLogger.info("ADMIN ACTION action=CHANGE_ROLE targetUser={} oldRole={} newRole={}", 
+                LoggingUtil.sanitizeForLog(user.getEmail()), oldRole, newRole);
     }
 
     public List<LoginAttempt> getRecentLoginAttempts() {
