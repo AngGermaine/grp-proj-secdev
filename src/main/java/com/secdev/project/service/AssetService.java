@@ -30,6 +30,10 @@ public class AssetService {
         return assetRepository.findByOwnerEmail(email);
     }
 
+    public List<Asset> getAllAssets() {
+        return assetRepository.findAll();
+    }
+
     @Transactional
     public Asset addAsset(String userEmail, AssetRequest request) {
         User user = userRepository.findByEmail(userEmail)

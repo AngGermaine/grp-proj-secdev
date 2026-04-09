@@ -247,6 +247,37 @@ public class UserService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
         userRepository.delete(user);
-        logger.info("AUTH EVENT username={} action=ACCOUNT_DELETE status=SUCCESS", user.getEmail());
+        logger.info("ADMIN ACTION action=DELETE_USER targetUser={} status=SUCCESS", user.getEmail());
+    }
+
+    @Transactional
+    public void toggleUserEnabled(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
+        String status = user.isEnabled() ? "ENABLED" : "DISABLED";
+        logger.info("ADMIN ACTION action=TOGGLE_USER_STATUS targetUser={} status={}", user.getEmail(), status);
+    }
+
+    @Transactional
+    public void changeUserRole(Long id, Role newRole) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        Role oldRole = user.getRole();
+        user.setRole(newRole);
+        userRepository.save(user);
+        logger.info("ADMIN ACTION action=CHANGE_ROLE targetUser={} oldRole={} newRole={}", 
+                user.getEmail(), oldRole, newRole);
+    }
+
+    public List<LoginAttempt> getRecentLoginAttempts() {
+        return loginAttemptRepository.findTop100ByOrderByAttemptTimeDesc();
+    }
+
+    public List<LoginAttempt> getLoginAttemptsByEmail(String email) {
+        return loginAttemptRepository.findByEmailOrderByAttemptTimeDesc(normalizeEmail(email));
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

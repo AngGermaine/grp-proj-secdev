@@ -12,6 +12,7 @@ public class Asset {
 
     private String name;
 
+    @Column(name = "asset_value")
     private Double value;
 
     private Integer quantity;

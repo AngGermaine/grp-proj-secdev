@@ -14,6 +14,8 @@
         <h1 class="text-2xl font-extrabold text-blue-600">Asset Tracker</h1>
         <div class="flex items-center space-y-0 space-x-6">
             <span class="text-slate-600 font-medium">Welcome, <span class="text-blue-600" sec:authentication="name">User</span></span>
+            <!-- Admin Panel Link (only visible to ADMIN role) -->
+            <a sec:authorize="hasRole('ADMIN')" href="/admin/users" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 transition">Admin Panel</a>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition">Logout</button>
             </form>
@@ -93,21 +95,21 @@
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-500 transition">
                     <h3 class="font-bold mb-2">1. Security Audit Logs</h3>
                     <p class="text-sm text-slate-400 mb-4">View real-time login and transaction logs from the system.</p>
-                    <button class="text-xs bg-red-600 px-3 py-1 rounded">View Logs</button>
+                    <a th:href="@{/admin/logs}" class="text-xs bg-red-600 px-3 py-1 rounded inline-block hover:bg-red-700 transition">View Logs</a>
                 </div>
 
                 <!-- Action 2 -->
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-500 transition">
                     <h3 class="font-bold mb-2">2. Manage User Locks</h3>
                     <p class="text-sm text-slate-400 mb-4">See users blocked by brute-force protection and unlock them.</p>
-                    <button class="text-xs bg-red-600 px-3 py-1 rounded">Manage Users</button>
+                    <a th:href="@{/admin/users}" class="text-xs bg-red-600 px-3 py-1 rounded inline-block hover:bg-red-700 transition">Manage Users</a>
                 </div>
 
                 <!-- Action 3-->
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-500 transition">
                     <h3 class="font-bold mb-2">3. Global Asset Delete</h3>
                     <p class="text-sm text-slate-400 mb-4">Force delete any asset entry from any user (Administrative override).</p>
-                    <button class="text-xs bg-red-600 px-3 py-1 rounded">Override List</button>
+                    <a th:href="@{/admin/assets}" class="text-xs bg-red-600 px-3 py-1 rounded inline-block hover:bg-red-700 transition">Override List</a>
                 </div>
             </div>
         </div>

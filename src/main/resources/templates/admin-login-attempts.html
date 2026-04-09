@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Login Attempts</title>
+    <link th:href="@{/css/output.css}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
+        <h1 class="text-2xl font-extrabold text-blue-600">Asset Tracker - Admin</h1>
+        <div class="flex items-center space-x-6">
+            <a href="/dashboard" class="text-slate-600 hover:text-blue-600">Dashboard</a>
+            <a href="/admin/users" class="text-slate-600 hover:text-blue-600">Users</a>
+            <a href="/admin/login-attempts" class="text-blue-600 font-bold">Login Attempts</a>
+            <a href="/admin/logs" class="text-slate-600 hover:text-blue-600">Logs</a>
+            <a href="/admin/assets" class="text-slate-600 hover:text-blue-600">Assets</a>
+            <form th:action="@{/logout}" method="post" class="inline">
+                <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto mt-10 p-4">
+        
+        <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Login Attempts</h2>
+                    <p th:if="${targetUser}" class="text-sm text-slate-500">
+                        Filtering by user: <span class="font-medium text-blue-600" th:text="${targetUser.email}"></span>
+                        <a href="/admin/login-attempts" class="ml-2 text-red-500 hover:underline">(Clear filter)</a>
+                    </p>
+                </div>
+                <span class="text-sm text-slate-500">Showing last 100 attempts</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 text-sm font-bold text-slate-700">ID</th>
+                            <th class="px-4 py-3 text-sm font-bold text-slate-700">Email</th>
+                            <th class="px-4 py-3 text-sm font-bold text-slate-700">IP Address</th>
+                            <th class="px-4 py-3 text-sm font-bold text-slate-700">Status</th>
+                            <th class="px-4 py-3 text-sm font-bold text-slate-700">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="attempt : ${attempts}" class="border-b border-slate-200 hover:bg-slate-50">
+                            <td class="px-4 py-3 text-sm text-slate-600" th:text="${attempt.id}"></td>
+                            <td class="px-4 py-3 text-sm text-slate-800 font-medium" th:text="${attempt.email}"></td>
+                            <td class="px-4 py-3 text-sm text-slate-600 font-mono" th:text="${attempt.ipAddress}"></td>
+                            <td class="px-4 py-3">
+                                <span th:if="${attempt.successful}" class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">SUCCESS</span>
+                                <span th:unless="${attempt.successful}" class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">FAILED</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-slate-600" th:text="${#temporals.format(attempt.attemptTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(attempts)}">
+                            <td colspan="5" class="px-4 py-8 text-center text-slate-500">No login attempts recorded</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
